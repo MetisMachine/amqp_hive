@@ -11,7 +11,7 @@ defmodule AmqpHiveClient.Rpc do
         {caller, ref} = Map.get(map, "caller")
         send caller, {ref, response}
         response
-      {:send, {caller, ref, [name, callback]}} ->
+      {:send, {caller, ref, [_name, callback]}} ->
         Logger.info("INSIDE SEND ARGs")
         callback.()
         loop(Map.put(map, "caller", {caller, ref}))
@@ -22,8 +22,8 @@ defmodule AmqpHiveClient.Rpc do
 
   def task(registered_name, pid, func, args) do
     ref = :erlang.make_ref()
-    task = %Task{owner: self(), pid: pid, ref: ref}    
-    Logger.info("REgistered it with pid = #{inspect(pid)}")
+    task = %Task{owner: self(), pid: pid, ref: ref}
+    # Logger.debug("REgistered it with pid = #{inspect(pid)}")
     Swarm.send(registered_name, {func, {self(), ref, args}})
     task
   end
@@ -43,6 +43,6 @@ defmodule AmqpHiveClient.Rpc do
       AmqpHiveClient.Producer.publish(conn_name, route, payload, options)
     end]
     {:ok, pid} = AmqpHive.RpcRegistry.register_task(correlation_id, args)
-    task = AmqpHiveClient.Rpc.task(correlation_id, pid, :send, args)
+    AmqpHiveClient.Rpc.task(correlation_id, pid, :send, args)
   end
 end
